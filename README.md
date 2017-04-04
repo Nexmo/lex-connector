@@ -34,7 +34,7 @@ The first `talk` action is a simple way to start the call, as Lex expects the fi
 
 The next action is the `connect`, this is telling the call to be connected to a websocket endpoint, in this case the endpoint is our Lex Connector.
 
-The path portion of te uri is the same as the path to the PostContent endpoint within Lex [http://docs.aws.amazon.com/lex/latest/dg/API_PostContent.html] but with the `~lex.nexmo.com~ lex.sammachin.com` host instead of AWS. Therefore you shoud set your BOTNAME, ALIAS and USER details as part of this URI
+The path portion of te uri is the same as the path to the PostContent endpoint within Lex [http://docs.aws.amazon.com/lex/latest/dg/API_PostContent.html] but with the ~lex.nexmo.com~ `lex.sammachin.com` host instead of AWS. Therefore you shoud set your BOTNAME, ALIAS and USER details as part of this URI
 
 Within the headers section of the endpoint you must supply the `aws_key` and `aws_secret` that will be used to connect to Lex. You should also specify the caller ID as a `cli` parameter here.
 
