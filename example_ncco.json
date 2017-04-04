@@ -1,0 +1,20 @@
+[
+{
+	"action": "talk",
+	"text": "Hello, I am Lex, how can I help you"
+}, 
+{
+	"action": "connect",
+	"eventUrl": ["http://example.com/event"],
+	"endpoint": [{
+		"type": "websocket",
+		"uri": "ws://lex.sammachin.com/bot/BOTNAME/alias/ALAIS/user/USER/content",
+		"content-type": "audio/l16;rate=16000",
+		"headers": {
+			"cli": "447946524903",
+			"aws_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAA",
+			"aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0"
+		}
+	}]
+}
+]

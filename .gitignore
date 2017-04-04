@@ -1,0 +1,5 @@
+.DS_Store
+.cache/
+lexmo.conf
+ncco.json
+venv/*

@@ -1,0 +1,10 @@
+backports-abc==0.5
+certifi==2017.1.23
+packaging==16.8
+pyparsing==2.1.10
+requests==2.13.0
+requests-aws4auth==0.9
+singledispatch==3.4.0.3
+six==1.10.0
+tornado==4.4.2
+webrtcvad==2.0.10
