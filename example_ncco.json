@@ -8,7 +8,7 @@
 	"eventUrl": ["http://example.com/event"],
 	"endpoint": [{
 		"type": "websocket",
-		"uri": "ws://lex.sammachin.com/bot/BOTNAME/alias/ALAIS/user/USER/content",
+		"uri": "ws://lex-us-east-1.nexmo.com/bot/BOTNAME/alias/ALAIS/user/USER/content",
 		"content-type": "audio/l16;rate=16000",
 		"headers": {
 			"cli": "447946524903",
