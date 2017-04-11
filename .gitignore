@@ -3,3 +3,6 @@
 lexmo.conf
 ncco.json
 venv/*
+.nexmopkg/conf/deb
+.nexmopkg/build
+
