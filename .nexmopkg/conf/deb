@@ -1,0 +1,30 @@
+name            nexmo-lexconnector
+version         1.0.0
+revision        1
+maintainer      Nexmo Ops <ops@nexmo.com>
+desc            Nexmo Lex connector
+category        service
+license         nexmo
+user            lex
+group           nexmo
+arch            all
+
+# run lintian on resulting package? [yes|no]
+lintian			no
+
+# package dependencies/suggestions
+depends         virtualenvwrapper
+depends         daemon
+
+# relative path to the init.d script and /etc/default/xxx script
+etc_initd       init.d/nexmo-lexconnector
+
+# ignore files with these glob patterns:
+ignore          **/.git
+ignore          **/.svn
+ignore          **/init.d/nexmo-lexconnector
+
+# by default, install files to /home/lex/runtime
+install         default     /home/lex/runtime
+
+
