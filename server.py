@@ -11,6 +11,7 @@ import sys
 import time
 from ConfigParser import SafeConfigParser as ConfigParser
 from logging import debug, info
+import uuid
 
 import requests
 import tornado.ioloop
@@ -19,9 +20,22 @@ import tornado.httpserver
 import tornado.template
 import tornado.web
 import webrtcvad
-from requests_aws4auth import AWS4Auth
+#Temp fix to use local copy of AWS4Auth waiting for https://github.com/sam-washington/requests-aws4auth/pull/32 to be merged
+#from requests_aws4auth import AWS4Auth
+from local_requests_aws4auth import AWS4Auth
+#Remove the local copy once fix in is PiPy 
 from tornado.web import url
 import json
+from requests.packages.urllib3.exceptions import InsecurePlatformWarning
+from requests.packages.urllib3.exceptions import SNIMissingWarning
+
+#Only used for record function
+import datetime
+import wave
+
+logging.captureWarnings(True)
+requests.packages.urllib3.disable_warnings(InsecurePlatformWarning)
+requests.packages.urllib3.disable_warnings(SNIMissingWarning)
 
 CLIP_MIN_MS = 500  # 500ms - the minimum audio clip that will be used
 MAX_LENGTH = 10000  # Max length of a sound clip for processing in ms
@@ -57,18 +71,18 @@ class BufferedPipe(object):
         self.count = 0
         self.payload = b''
 
-    def append(self, data, cli):
+    def append(self, data, id):
         """ Add another data to the buffer. `data` should be a `bytes` object. """
 
         self.count += 1
         self.payload += data
 
         if self.count == self.max_frames:
-            self.process(cli)
+            self.process(id)
 
-    def process(self, cli):
+    def process(self, id):
         """ Process and clear the buffer. """
-        self.sink(self.count, self.payload, cli)
+        self.sink(self.count, self.payload, id)
         self.count = 0
         self.payload = b''
 
@@ -79,27 +93,35 @@ class LexProcessor(object):
         self._aws_id = aws_id
         self._aws_secret = aws_secret
         self._path = path
-    def process(self, count, payload, cli):
+    def process(self, count, payload, id):
         if count > CLIP_MIN_FRAMES:  # If the buffer is less than CLIP_MIN_MS, ignore it
-            auth = AWS4Auth(self._aws_id, self._aws_secret, 'us-east-1', 'lex')
-            info('Processing {} frames from {}'.format(str(count), cli))
+            if logging.getLogger().level == 10: #if we're in Debug then save the audio clip
+                fn = "{}rec-{}-{}.wav".format('./recordings/', id, datetime.datetime.now().strftime("%Y%m%dT%H%M%S"))
+                output = wave.open(fn, 'wb')
+                output.setparams((1, 2, 16000, 0, 'NONE', 'not compressed'))
+                output.writeframes(payload)
+                output.close()
+                debug('File written {}'.format(fn))
+            auth = AWS4Auth(self._aws_id, self._aws_secret, 'us-east-1', 'lex', unsign_payload=True)
+            info('Processing {} frames for {}'.format(str(count), id))
             endpoint = 'https://runtime.lex.{}.amazonaws.com{}'.format(self._aws_region, self._path)
             headers = {'Content-Type': 'audio/l16; channels=1; rate=16000', 'Accept': 'audio/pcm'}
             req = requests.Request('POST', endpoint, auth=auth, headers=headers)
             prepped = req.prepare()
+            info(prepped.headers)
             r = requests.post(endpoint, data=payload, headers=prepped.headers)
             info(r.headers)
-            self.playback(r.content, cli)
+            self.playback(r.content, id)
         else:
             info('Discarding {} frames'.format(str(count)))
-    def playback(self, content, cli):
+    def playback(self, content, id):
         frames = len(content) // 640
-        info("Playing {} frames to {}".format(frames, cli))
-        conn = conns[cli]
+        info("Playing {} frames to {}".format(frames, id))
+        conn = conns[id]
         pos = 0
         for x in range(0, frames + 1):
             newpos = pos + 640
-            debug("writing bytes {} to {} to socket for {}".format(pos, newpos, cli))
+            #debug("writing bytes {} to {} to socket for {}".format(pos, newpos, id))
             data = content[pos:newpos]
             conn.write_message(data, binary=True)
             time.sleep(0.018)
@@ -113,11 +135,12 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         self.frame_buffer = None
         # Setup the Voice Activity Detector
         self.tick = None
-        self.cli = None
+        self.id = uuid.uuid4().hex
         self.vad = webrtcvad.Vad()
-        self.vad.set_mode(1)  # Level of sensitivity
+        self.vad.set_mode(2)  # Level of sensitivity
         self.processor = None
         self.path = None
+        conns[self.id] = self
     def open(self, path):
         info("client connected")
         debug(self.request.uri)
@@ -127,26 +150,24 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         # Check if message is Binary or Text
         if type(message) == str:
             if self.vad.is_speech(message, 16000):
-                debug ("SPEECH from {}".format(self.cli))
+                debug ("SPEECH from {}".format(self.id))
                 self.tick = SILENCE
-                self.frame_buffer.append(message, self.cli)
+                self.frame_buffer.append(message, self.id)
             else:
-                debug("Silence from {} TICK: {}".format(self.cli, self.tick))
+                debug("Silence from {} TICK: {}".format(self.id, self.tick))
                 self.tick -= 1
                 if self.tick == 0:
-                    self.frame_buffer.process(self.cli)  # Force processing and clearing of the buffer
+                    self.frame_buffer.process(self.id)  # Force processing and clearing of the buffer
         else:
             info(message)
             # Here we should be extracting the meta data that was sent and attaching it to the connection object
-            data = json.loads(message)
-            self.cli = data['cli']
-            conns[self.cli] = self
+            data = json.loads(message)    
             self.processor = LexProcessor(self.path, data['aws_key'], data['aws_secret']).process
             self.frame_buffer = BufferedPipe(MAX_LENGTH // MS_PER_FRAME, self.processor)
             self.write_message('ok')
     def on_close(self):
         # Remove the connection from the list of connections
-        del conns[self.cli]
+        del conns[self.id]
         info("client disconnected")
 
 
