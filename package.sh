@@ -11,7 +11,7 @@ fi
 eval set -- "$ARGS";
 
 # default values
-REPO=
+DEB_REPO=
 GIT_BRANCH=
 GIT_COMMIT=
 PACKAGING_CONF=conf/deb
@@ -23,10 +23,10 @@ while true; do
 	    case "$2" in
 		"")
 		# Using default repository (on QA = qaservice1)
-		    REPO=qaservice1.internal
+		    DEB_REPO=qaservice1.internal
 		    ;;
 		*)
-		    REPO="$2"
+		    DEB_REPO="$2"
 		    ;;
 	    esac
 	    shift 2;
@@ -57,7 +57,7 @@ then
     exit 3
 fi
 
-echo "Creating and pushing to $REPO the package for ${GIT_BRANCH}@${GIT_COMMIT}"
+echo "Creating and pushing to $DEB_REPO the package for ${GIT_BRANCH}@${GIT_COMMIT}"
 
 # Get date of branch / commit
 declare -r commit_date=$(git show -s --format=format:"%ci" $GIT_COMMIT)
@@ -85,10 +85,10 @@ else
     } 
     pushd build >> /dev/null
     declare -r deb_package=$(ls -rt nexmo-lexconnector*.deb)
-    ssh -i /var/lib/jenkins/.ssh/nexmo-ops.pem jenkinsdeploy@${REPO} cat /var/debrepo/debian/stable/amd64/Packages | egrep "Filename: .*/${deb_package}" && package_already_pushed "${deb_package}"
+    ssh -i /var/lib/jenkins/.ssh/nexmo-ops.pem jenkinsdeploy@${DEB_REPO} cat /var/debrepo/debian/stable/amd64/Packages | egrep "Filename: .*/${deb_package}" && package_already_pushed "${deb_package}"
     
     # Pushing files to the debian repository
-    echo scp -i /var/lib/jenkins/.ssh/nexmo-ops.pem nexmo-lexconnector*.deb nexmo-lexconnector*.changes jenkinsdeploy@${REPO}:/var/debrepo/incoming || exit 14
+    echo scp -i /var/lib/jenkins/.ssh/nexmo-ops.pem nexmo-lexconnector*.deb nexmo-lexconnector*.changes jenkinsdeploy@${DEB_REPO}:/var/debrepo/incoming || exit 14
     popd > /dev/null
 fi
 
