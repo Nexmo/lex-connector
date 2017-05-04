@@ -171,6 +171,13 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         info("client disconnected")
 
 
+class PingHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    def get(self):
+        self.write('ok')
+        self.set_header("Content-Type", 'text/plain')
+        self.finish()
+
 
 class Config(object):
     def __init__(self, specified_config_path):
@@ -198,6 +205,7 @@ def main(argv=sys.argv[1:]):
         )
         config = Config(args.config)
         application = tornado.web.Application([
+			url(r"/ping", PingHandler),
             url(r"/(.*)", WSHandler),
         ])
         http_server = tornado.httpserver.HTTPServer(application)
