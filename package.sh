@@ -88,7 +88,7 @@ else
     ssh -i /var/lib/jenkins/.ssh/nexmo-ops.pem jenkinsdeploy@${DEB_REPO} cat /var/debrepo/debian/stable/amd64/Packages | egrep "Filename: .*/${deb_package}" && package_already_pushed "${deb_package}"
     
     # Pushing files to the debian repository
-    echo scp -i /var/lib/jenkins/.ssh/nexmo-ops.pem nexmo-lexconnector*.deb nexmo-lexconnector*.changes jenkinsdeploy@${DEB_REPO}:/var/debrepo/incoming || exit 14
+    scp -i /var/lib/jenkins/.ssh/nexmo-ops.pem nexmo-lexconnector*.deb nexmo-lexconnector*.changes jenkinsdeploy@${DEB_REPO}:/var/debrepo/incoming || exit 14
     popd > /dev/null
 fi
 
