@@ -19,7 +19,7 @@ Here is an example of the NCCO you should return for your incomming calls:
 	"eventUrl": ["http://example.com/event"],
 	"endpoint": [{
 		"type": "websocket",
-		"uri": "ws://lex.nexmo.com/bot/BOTNAME/alias/ALAIS/user/USER/content",
+		"uri": "wss://lex-us-east-1.nexmo.com/bot/BOTNAME/alias/ALAIS/user/USER/content",
 		"content-type": "audio/l16;rate=16000",
 		"headers": {
 			"aws_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -33,7 +33,7 @@ The first `talk` action is a simple way to start the call, as Lex expects the fi
 
 The next action is the `connect`, this is telling the call to be connected to a websocket endpoint, in this case the endpoint is our Lex Connector.
 
-The path portion of te uri is the same as the path to the PostContent endpoint within Lex [http://docs.aws.amazon.com/lex/latest/dg/API_PostContent.html] but with the `lex.nexmo.com`  host instead of AWS. Therefore you shoud set your BOTNAME, ALIAS and USER details as part of this URI
+The path portion of te uri is the same as the path to the PostContent endpoint within Lex [http://docs.aws.amazon.com/lex/latest/dg/API_PostContent.html] but with the `lex-us-east-1.nexmo.com`  host instead of AWS. Therefore you shoud set your BOTNAME, ALIAS and USER details as part of this URI
 
 Within the headers section of the endpoint you must supply the `aws_key` and `aws_secret` that will be used to connect to Lex. 
 
