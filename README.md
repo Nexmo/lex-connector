@@ -58,7 +58,7 @@ You want to run your own instance of LexConnector? There should be no need to ru
 pip install --upgrade -r requirements.txt
 ```
 
-Copy the `lexmo.conf.template` file to `lexmo.conf` and modify it with the hostname and port you wish to use to host the service. The port is internal to you - LexConnector assumes the service can be accessed via port 80 on the hostname you provide, with something like NGinx proxying to the port you've provided. LexConnector is a WebSocket based service, so make sure your proxy is configured to handle WebSocket connections! If you don't wish to run a proxy in front of LexConnector, just set the port to 80.
+Copy the `lexmo.conf.template` file to `lexmo.conf` and modify it with the hostname and port you wish to use to host the service. The port is internal to you - LexConnector assumes the service can be accessed via the default port (80/443) on the hostname you provide, with something like NGinx proxying to the port you've provided. LexConnector is a WebSocket based service, so make sure your proxy is configured to handle WebSocket connections! If you don't wish to run a proxy in front of LexConnector, just set the port to 80.
 
 Run the server like this:
 
@@ -66,8 +66,9 @@ Run the server like this:
 python server.py --config lexmo.conf
 ```
 
-Obviously the WebSocket URL you use in your NCCO should use the hostname of your service, instead of `lex-us-east-1.nexmo.com`.
+Obviously the WebSocket URL you use in your NCCO should use the hostname of your service, instead of `lex-us-east-1.nexmo.com`, and if you don't have SSL set up, you'll need to change the `wss` prefix to `ws`.
 
 ## Credits
 
 * Sam Machin, [@sammachin](https://twitter.com/sammachin)
+* Mark Smith, [@judy2k](https://twitter.com/judy2k)
