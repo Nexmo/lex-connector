@@ -20,10 +20,7 @@ import tornado.httpserver
 import tornado.template
 import tornado.web
 import webrtcvad
-#Temp fix to use local copy of AWS4Auth waiting for https://github.com/sam-washington/requests-aws4auth/pull/32 to be merged
-#from requests_aws4auth import AWS4Auth
-from local_requests_aws4auth import AWS4Auth
-#Remove the local copy once fix in is PiPy 
+from requests_aws4auth import AWS4Auth
 from tornado.web import url
 import json
 from requests.packages.urllib3.exceptions import InsecurePlatformWarning
