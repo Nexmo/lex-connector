@@ -70,4 +70,4 @@ Obviously the WebSocket URL you use in your NCCO should use the hostname of your
 
 ## Credits
 
-* Sam Machin, [@sammachin](https://twitter.com/sammachin)
+* Mark Smith, [@judy2k](https://twitter.com/judy2k)
