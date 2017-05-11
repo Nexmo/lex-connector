@@ -3,4 +3,4 @@
 lexmo.conf
 ncco.json
 venv/*
-
+*.pyc
