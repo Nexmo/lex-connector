@@ -4,4 +4,4 @@
 host=lex-us-east-1.nexmo.com
 
 # PORT:
-port=5240
+port=YOUR_PORT_HERE
