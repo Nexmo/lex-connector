@@ -1,7 +1,7 @@
 [lexmo]
 
 # PUBLIC HOSTNAME:
-host=lex-us-east-1.nexmo.com
+host=YOUR_HOSTNAME
 
 # PORT:
 port=YOUR_PORT_HERE
