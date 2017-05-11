@@ -1,0 +1,15 @@
+backports-abc==0.5
+certifi==2017.1.23
+packaging==16.8
+pyparsing==2.1.10
+requests==2.13.0
+
+# The following includes a patch which is awaiting upstream merging at
+# https://github.com/sam-washington/requests-aws4auth/pull/32
+# requests-aws4auth==0.9
+git+git://github.com/tbass134/requests-aws4auth.git@7f0a747c52b6913dcce71f82c8d8cadd4ecd9fcc
+
+singledispatch==3.4.0.3
+six==1.10.0
+tornado==4.4.2
+webrtcvad==2.0.10

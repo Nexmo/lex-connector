@@ -1,0 +1,7 @@
+[lexmo]
+
+# PUBLIC HOSTNAME:
+host=YOUR_HOSTNAME
+
+# PORT:
+port=YOUR_PORT_HERE
