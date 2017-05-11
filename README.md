@@ -42,7 +42,7 @@ You should look at the [range of voices available on Nexmo](https://docs.nexmo.c
 
 The next action is `connect`: this makes call connect to the WebSocket endpoint, specifically the Lex Connector WebSocket.
 
-The path portion of thee uri is the same as the path to the `PostContent` endpoint within Lex [http://docs.aws.amazon.com/lex/latest/dg/API_PostContent.html] but with the `lex-us-east-1.nexmo.com` as host instead of AWS. Therefore you shoud set your BOTNAME, ALIAS and USER details as part of this URI. You can get these details from the AWS Console.
+The path portion of the uri is the same as the path to the `PostContent` endpoint within Lex [http://docs.aws.amazon.com/lex/latest/dg/API_PostContent.html] but with the `lex-us-east-1.nexmo.com` as host instead of AWS. Therefore you should set your BOTNAME, ALIAS and USER details as part of this URI. You can get these details from the AWS Console.
 
 Within the headers section of the endpoint you must supply the `aws_key` and `aws_secret` that will be used to connect to Lex.
 
