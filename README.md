@@ -41,3 +41,20 @@ The `eventUrl` is where Nexmo will send events regarding the connection to the L
 
 The `content-type` is a fixed value.
 
+## Running LexConnector
+
+You want to run your own instance of LexConnector? There should be no need to run your own server normally, as we host a public version on `lex-us-east-1.nexmo.com`. If you *do* want to run your own instance, you'll need an up-to-date version of Python 2. Install dependencies with:
+
+```bash
+pip install --upgrade -r requirements.txt
+```
+
+Copy the `lexmo.conf.template` file to `lexmo.conf` and modify it with the hostname and port you wish to use to host the service. The port is internal to you - LexConnector assumes the service can be accessed via port 80 on the hostname you provide, with something like NGinx proxying to the port you've provided. LexConnector is a WebSocket based service, so make sure your proxy is configured to handle WebSocket connections! If you don't wish to run a proxy in front of LexConnector, just set the port to 80.
+
+Run the server like this:
+
+```bash
+python server.py --config lexmo.conf
+```
+
+Obviously the WebSocket URL you use in your NCCO should use the hostname of your service, instead of `lex-us-east-1.nexmo.com`.
