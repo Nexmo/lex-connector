@@ -26,7 +26,7 @@ Here is an example of the NCCO you should return to handle incoming calls:
                     "aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0"
                 },
                 "type": "websocket",
-                "uri": "wss://lex-us-east-1.nexmo.com/bot/BOTNAME/alias/ALAIS/user/USER/content"
+                "uri": "wss://lex-us-east-1.nexmo.com/bot/BOTNAME/alias/ALIAS/user/USER/content"
             }
         ],
         "eventUrl": [
