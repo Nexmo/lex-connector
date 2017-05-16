@@ -34,7 +34,7 @@ logging.captureWarnings(True)
 requests.packages.urllib3.disable_warnings(InsecurePlatformWarning)
 requests.packages.urllib3.disable_warnings(SNIMissingWarning)
 
-CLIP_MIN_MS = 500  # 500ms - the minimum audio clip that will be used
+CLIP_MIN_MS = 200  # 200ms - the minimum audio clip that will be used
 MAX_LENGTH = 10000  # Max length of a sound clip for processing in ms
 SILENCE = 20  # How many continuous frames of silence determine the end of a phrase
 
@@ -109,6 +109,8 @@ class LexProcessor(object):
             r = requests.post(endpoint, data=payload, headers=prepped.headers)
             info(r.headers)
             self.playback(r.content, id)
+            if r.headers['x-amz-lex-dialog-state'] == 'Fulfilled' or r.headers['x-amz-lex-dialog-state'] == 'Failed':
+                conns[id].close()
         else:
             info('Discarding {} frames'.format(str(count)))
     def playback(self, content, id):
