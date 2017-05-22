@@ -110,8 +110,8 @@ class LexProcessor(object):
             r = requests.post(endpoint, data=payload, headers=prepped.headers)
             info(r.headers)
             self.playback(r.content, id)
-            if r.headers['x-amz-lex-session-attributes']:
-                if json.loads(r.headers['x-amz-lex-session-attributes']).get('nexmo-close'):
+            if r.headers.get('x-amz-lex-session-attributes'):
+                if json.loads(b64decode(r.headers['x-amz-lex-session-attributes'])).get('nexmo-close'):
                     conns[id].close()
         else:
             info('Discarding {} frames'.format(str(count)))
