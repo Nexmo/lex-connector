@@ -12,6 +12,7 @@ import time
 from ConfigParser import SafeConfigParser as ConfigParser
 from logging import debug, info
 import uuid
+from Queue import Queue
 
 import requests
 import tornado.ioloop
@@ -23,6 +24,7 @@ import webrtcvad
 from requests_aws4auth import AWS4Auth
 from tornado.web import url
 import json
+import threading
 from requests.packages.urllib3.exceptions import InsecurePlatformWarning
 from requests.packages.urllib3.exceptions import SNIMissingWarning
 
@@ -37,6 +39,8 @@ requests.packages.urllib3.disable_warnings(SNIMissingWarning)
 CLIP_MIN_MS = 500  # 500ms - the minimum audio clip that will be used
 MAX_LENGTH = 10000  # Max length of a sound clip for processing in ms
 SILENCE = 20  # How many continuous frames of silence determine the end of a phrase
+SILENCE_OVERLAP = 5 # How many frames to keep at the start of a silent section
+POST_PLAYBACK_PAUSE = 0.5 # Seconds to wait after playing back a response before accepting new input
 
 # Constants:
 BYTES_PER_FRAME = 640  # Bytes in a frame
@@ -68,8 +72,12 @@ class BufferedPipe(object):
         self.count = 0
         self.payload = b''
 
+        self.is_processing = False
+
     def append(self, data, id):
         """ Add another data to the buffer. `data` should be a `bytes` object. """
+        if self.is_processing:
+            return
 
         self.count += 1
         self.payload += data
@@ -79,9 +87,22 @@ class BufferedPipe(object):
 
     def process(self, id):
         """ Process and clear the buffer. """
-        self.sink(self.count, self.payload, id)
-        self.count = 0
-        self.payload = b''
+        if self.is_processing:
+            return
+
+        # Spawn a new thread to process the recording
+        self.is_processing = True
+        thread = threading.Thread(target=self.process_thread(id))
+        thread.daemon = True
+        thread.start()
+
+    def process_thread(self, id):
+        def process_thread_inner():
+            self.sink(self.count, self.payload, id)
+            self.count = 0
+            self.payload = b''
+            self.is_processing = False
+        return process_thread_inner
 
 
 class LexProcessor(object):
@@ -123,6 +144,7 @@ class LexProcessor(object):
             conn.write_message(data, binary=True)
             time.sleep(0.018)
             pos = newpos
+        time.sleep(POST_PLAYBACK_PAUSE)
 
 
 
@@ -153,6 +175,9 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             else:
                 debug("Silence from {} TICK: {}".format(self.id, self.tick))
                 self.tick -= 1
+                # Keep some frames, since the tail end of speech may be recognized as silence
+                if self.tick > SILENCE - SILENCE_OVERLAP:
+                    self.frame_buffer.append(message, self.id)
                 if self.tick == 0:
                     self.frame_buffer.process(self.id)  # Force processing and clearing of the buffer
         else:
