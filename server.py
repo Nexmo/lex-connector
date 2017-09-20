@@ -23,6 +23,7 @@ import webrtcvad
 from requests_aws4auth import AWS4Auth
 from tornado.web import url
 import json
+from base64 import b64decode
 from requests.packages.urllib3.exceptions import InsecurePlatformWarning
 from requests.packages.urllib3.exceptions import SNIMissingWarning
 
@@ -109,6 +110,9 @@ class LexProcessor(object):
             r = requests.post(endpoint, data=payload, headers=prepped.headers)
             info(r.headers)
             self.playback(r.content, id)
+            if r.headers.get('x-amz-lex-session-attributes'):
+                if json.loads(b64decode(r.headers['x-amz-lex-session-attributes'])).get('nexmo-close'):
+                    conns[id].close()
         else:
             info('Discarding {} frames'.format(str(count)))
     def playback(self, content, id):
