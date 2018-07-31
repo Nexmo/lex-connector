@@ -5,7 +5,7 @@
 }, 
 {
 	"action": "connect",
-	"eventUrl": ["http://example.com/event"],
+	"eventUrl": ["http://sammachin.ngrok.io/event"],
 	"endpoint": [{
 		"type": "websocket",
 		"uri": "ws://lex.nexmo.com/bot/BOTNAME/alias/ALAIS/user/USER/content",

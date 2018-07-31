@@ -40,7 +40,7 @@ MAX_LENGTH = 10000  # Max length of a sound clip for processing in ms
 SILENCE = 20  # How many continuous frames of silence determine the end of a phrase
 
 # Constants:
-BYTES_PER_FRAME = 640  # Bytes in a frame
+BYTES_PER_FRAME = 320  # Bytes in a frame
 MS_PER_FRAME = 20  # Duration of a frame in ms
 
 CLIP_MIN_FRAMES = CLIP_MIN_MS // MS_PER_FRAME
@@ -96,14 +96,14 @@ class LexProcessor(object):
             if logging.getLogger().level == 10: #if we're in Debug then save the audio clip
                 fn = "{}rec-{}-{}.wav".format('./recordings/', id, datetime.datetime.now().strftime("%Y%m%dT%H%M%S"))
                 output = wave.open(fn, 'wb')
-                output.setparams((1, 2, 16000, 0, 'NONE', 'not compressed'))
+                output.setparams((1, 2, 8000, 0, 'NONE', 'not compressed'))
                 output.writeframes(payload)
                 output.close()
                 debug('File written {}'.format(fn))
             auth = AWS4Auth(self._aws_id, self._aws_secret, 'us-east-1', 'lex', unsign_payload=True)
             info('Processing {} frames for {}'.format(str(count), id))
             endpoint = 'https://runtime.lex.{}.amazonaws.com{}'.format(self._aws_region, self._path)
-            headers = {'Content-Type': 'audio/l16; channels=1; rate=16000', 'Accept': 'audio/pcm'}
+            headers = {'Content-Type': 'audio/l16; channels=1; rate=8000', 'Accept': 'audio/pcm'}
             req = requests.Request('POST', endpoint, auth=auth, headers=headers)
             prepped = req.prepare()
             info(prepped.headers)
@@ -116,16 +116,15 @@ class LexProcessor(object):
         else:
             info('Discarding {} frames'.format(str(count)))
     def playback(self, content, id):
-        frames = len(content) // 640
+        frames = len(content) // 320
         info("Playing {} frames to {}".format(frames, id))
         conn = conns[id]
         pos = 0
         for x in range(0, frames + 1):
-            newpos = pos + 640
+            newpos = pos + 320
             #debug("writing bytes {} to {} to socket for {}".format(pos, newpos, id))
             data = content[pos:newpos]
             conn.write_message(data, binary=True)
-            time.sleep(0.018)
             pos = newpos
 
 
@@ -150,7 +149,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         # Check if message is Binary or Text
         if type(message) == str:
-            if self.vad.is_speech(message, 16000):
+            if self.vad.is_speech(message, 8000):
                 debug ("SPEECH from {}".format(self.id))
                 self.tick = SILENCE
                 self.frame_buffer.append(message, self.id)

@@ -4,4 +4,4 @@
 host=YOUR_HOSTNAME
 
 # PORT:
-port=YOUR_PORT_HERE
+port=5000
