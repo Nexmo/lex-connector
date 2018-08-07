@@ -20,7 +20,7 @@ Here is an example of the NCCO you should return to handle incoming calls:
         "action": "connect",
         "endpoint": [
             {
-                "content-type": "audio/l16;rate=16000",
+                "content-type": "audio/l16;rate=8000",
                 "headers": {
                     "aws_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAA",
                     "aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0"
@@ -48,7 +48,6 @@ Within the headers section of the endpoint you must supply the `aws_key` and `aw
 
 The `eventUrl` is where Nexmo will send events regarding the connection to the Lex Connector so that your application can be aware of the start and end of a session. Currently we do not share any data or events on the requests to and from Lex: the events sent are simply the start and end of the call.
 
-The `content-type` is a fixed value.
 
 ## Running LexConnector
 

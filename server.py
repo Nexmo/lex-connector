@@ -4,14 +4,16 @@ from __future__ import absolute_import, print_function
 
 import argparse
 import ConfigParser as configparser
+from ConfigParser import SafeConfigParser as ConfigParser
 import io
 import logging
 import os
 import sys
 import time
-from ConfigParser import SafeConfigParser as ConfigParser
 from logging import debug, info
 import uuid
+import cgi
+import audioop
 
 import requests
 import tornado.ioloop
@@ -40,10 +42,7 @@ MAX_LENGTH = 10000  # Max length of a sound clip for processing in ms
 SILENCE = 20  # How many continuous frames of silence determine the end of a phrase
 
 # Constants:
-BYTES_PER_FRAME = 320  # Bytes in a frame
 MS_PER_FRAME = 20  # Duration of a frame in ms
-
-CLIP_MIN_FRAMES = CLIP_MIN_MS // MS_PER_FRAME
 
 # Global variables
 conns = {}
@@ -86,24 +85,32 @@ class BufferedPipe(object):
 
 
 class LexProcessor(object):
-    def __init__(self, path, aws_id, aws_secret):
+    def __init__(self, path, rate, aws_id, aws_secret):
         self._aws_region = 'us-east-1'
         self._aws_id = aws_id
         self._aws_secret = aws_secret
+        self.rate = rate
+        self.bytes_per_frame = rate/25
         self._path = path
+        self.clip_min_frames = CLIP_MIN_MS // MS_PER_FRAME
     def process(self, count, payload, id):
-        if count > CLIP_MIN_FRAMES:  # If the buffer is less than CLIP_MIN_MS, ignore it
+        if count > self.clip_min_frames:  # If the buffer is less than CLIP_MIN_MS, ignore it
             if logging.getLogger().level == 10: #if we're in Debug then save the audio clip
                 fn = "{}rec-{}-{}.wav".format('./recordings/', id, datetime.datetime.now().strftime("%Y%m%dT%H%M%S"))
                 output = wave.open(fn, 'wb')
-                output.setparams((1, 2, 8000, 0, 'NONE', 'not compressed'))
+                output.setparams((1, 2, self.rate, 0, 'NONE', 'not compressed'))
                 output.writeframes(payload)
                 output.close()
                 debug('File written {}'.format(fn))
             auth = AWS4Auth(self._aws_id, self._aws_secret, 'us-east-1', 'lex', unsign_payload=True)
             info('Processing {} frames for {}'.format(str(count), id))
             endpoint = 'https://runtime.lex.{}.amazonaws.com{}'.format(self._aws_region, self._path)
-            headers = {'Content-Type': 'audio/l16; channels=1; rate=8000', 'Accept': 'audio/pcm'}
+            if self.rate == 16000:
+                headers = {'Content-Type': 'audio/l16; channels=1; rate=16000', 'Accept': 'audio/pcm'}
+            elif self.rate == 8000:
+                headers = {'Content-Type': 'audio/lpcm; sample-rate=8000; sample-size-bits=16; channel-count=1; is-big-endian=false', 'Accept': 'audio/pcm'}
+            else:
+                info("Unsupported Sample Rate: % ".format(self.rate))
             req = requests.Request('POST', endpoint, auth=auth, headers=headers)
             prepped = req.prepare()
             info(prepped.headers)
@@ -115,13 +122,17 @@ class LexProcessor(object):
                     conns[id].close()
         else:
             info('Discarding {} frames'.format(str(count)))
-    def playback(self, content, id):
-        frames = len(content) // 320
+    def playback(self, response, id):
+        if self.rate == 8000:
+            content, _ignore = audioop.ratecv(response, 2, 1, 16000, 8000, None) # Downsample 16Khz to 8Khz
+        else:
+            content = response
+        frames = len(content) // self.bytes_per_frame
         info("Playing {} frames to {}".format(frames, id))
         conn = conns[id]
         pos = 0
         for x in range(0, frames + 1):
-            newpos = pos + 320
+            newpos = pos + self.bytes_per_frame
             #debug("writing bytes {} to {} to socket for {}".format(pos, newpos, id))
             data = content[pos:newpos]
             conn.write_message(data, binary=True)
@@ -140,6 +151,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         self.vad.set_mode(2)  # Level of sensitivity
         self.processor = None
         self.path = None
+        self.rate = None #default to None
         conns[self.id] = self
     def open(self, path):
         info("client connected")
@@ -149,7 +161,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         # Check if message is Binary or Text
         if type(message) == str:
-            if self.vad.is_speech(message, 8000):
+            if self.vad.is_speech(message, self.rate):
                 debug ("SPEECH from {}".format(self.id))
                 self.tick = SILENCE
                 self.frame_buffer.append(message, self.id)
@@ -161,8 +173,10 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         else:
             info(message)
             # Here we should be extracting the meta data that was sent and attaching it to the connection object
-            data = json.loads(message)    
-            self.processor = LexProcessor(self.path, data['aws_key'], data['aws_secret']).process
+            data = json.loads(message)
+            m_type, m_options = cgi.parse_header(data['content-type'])
+            self.rate= int(m_options['rate'])
+            self.processor = LexProcessor(self.path, self.rate, data['aws_key'], data['aws_secret']).process
             self.frame_buffer = BufferedPipe(MAX_LENGTH // MS_PER_FRAME, self.processor)
             self.write_message('ok')
     def on_close(self):
@@ -181,7 +195,7 @@ class PingHandler(tornado.web.RequestHandler):
 
 class Config(object):
     def __init__(self, specified_config_path):
-        config = ConfigParser()
+        config = configparser.ConfigParser()
         config.readfp(io.BytesIO(DEFAULT_CONFIG))
         config.read("./lexmo.conf")
         # Validate config:

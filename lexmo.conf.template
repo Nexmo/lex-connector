@@ -1,7 +1,7 @@
 [lexmo]
 
 # PUBLIC HOSTNAME:
-host=YOUR_HOSTNAME
+host=example.ngrok.io
 
 # PORT:
 port=5000
