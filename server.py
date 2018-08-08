@@ -85,8 +85,8 @@ class BufferedPipe(object):
 
 
 class LexProcessor(object):
-    def __init__(self, path, rate, aws_id, aws_secret):
-        self._aws_region = 'us-east-1'
+    def __init__(self, path, rate, aws_region, aws_id, aws_secret):
+        self._aws_region = aws_region
         self._aws_id = aws_id
         self._aws_secret = aws_secret
         self.rate = rate
@@ -102,9 +102,10 @@ class LexProcessor(object):
                 output.writeframes(payload)
                 output.close()
                 debug('File written {}'.format(fn))
-            auth = AWS4Auth(self._aws_id, self._aws_secret, 'us-east-1', 'lex', unsign_payload=True)
+            auth = AWS4Auth(self._aws_id, self._aws_secret, self._aws_region, 'lex', unsign_payload=True)
             info('Processing {} frames for {}'.format(str(count), id))
             endpoint = 'https://runtime.lex.{}.amazonaws.com{}'.format(self._aws_region, self._path)
+            info(endpoint)
             if self.rate == 16000:
                 headers = {'Content-Type': 'audio/l16; channels=1; rate=16000', 'Accept': 'audio/pcm'}
             elif self.rate == 8000:
@@ -176,7 +177,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             data = json.loads(message)
             m_type, m_options = cgi.parse_header(data['content-type'])
             self.rate= int(m_options['rate'])
-            self.processor = LexProcessor(self.path, self.rate, data['aws_key'], data['aws_secret']).process
+            self.processor = LexProcessor(self.path, self.rate, data['aws_region'], data['aws_key'], data['aws_secret']).process
             self.frame_buffer = BufferedPipe(MAX_LENGTH // MS_PER_FRAME, self.processor)
             self.write_message('ok')
     def on_close(self):
