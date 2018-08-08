@@ -177,7 +177,8 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             data = json.loads(message)
             m_type, m_options = cgi.parse_header(data['content-type'])
             self.rate= int(m_options['rate'])
-            self.processor = LexProcessor(self.path, self.rate, data['aws_region'], data['aws_key'], data['aws_secret']).process
+            region = data.get('aws_region', 'us-east-1')
+            self.processor = LexProcessor(self.path, self.rate, region, data['aws_key'], data['aws_secret']).process
             self.frame_buffer = BufferedPipe(MAX_LENGTH // MS_PER_FRAME, self.processor)
             self.write_message('ok')
     def on_close(self):
