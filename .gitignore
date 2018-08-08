@@ -4,4 +4,5 @@ lexmo.conf
 ncco.json
 venv/*
 recordings/*
+recordings
 *.pyc
