@@ -13,7 +13,11 @@
 		"headers": {
             "aws_region": "us-east-1",
 			"aws_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAA",
-			"aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0"
+			"aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0",
+            "silence_time": 400,
+            "clip_min": 200,
+            "clip_max": 10000,
+            "sensitivity": 2
 		}
 	}]
 }

@@ -37,10 +37,6 @@ logging.captureWarnings(True)
 requests.packages.urllib3.disable_warnings(InsecurePlatformWarning)
 requests.packages.urllib3.disable_warnings(SNIMissingWarning)
 
-CLIP_MIN_MS = 200  # 200ms - the minimum audio clip that will be used
-MAX_LENGTH = 10000  # Max length of a sound clip for processing in ms
-SILENCE = 20  # How many continuous frames of silence determine the end of a phrase
-
 # Constants:
 MS_PER_FRAME = 20  # Duration of a frame in ms
 
@@ -85,14 +81,14 @@ class BufferedPipe(object):
 
 
 class LexProcessor(object):
-    def __init__(self, path, rate, aws_region, aws_id, aws_secret):
+    def __init__(self, path, rate, clip_min, aws_region, aws_id, aws_secret):
         self._aws_region = aws_region
         self._aws_id = aws_id
         self._aws_secret = aws_secret
         self.rate = rate
         self.bytes_per_frame = rate/25
         self._path = path
-        self.clip_min_frames = CLIP_MIN_MS // MS_PER_FRAME
+        self.clip_min_frames = clip_min // MS_PER_FRAME
     def process(self, count, payload, id):
         if count > self.clip_min_frames:  # If the buffer is less than CLIP_MIN_MS, ignore it
             if logging.getLogger().level == 10: #if we're in Debug then save the audio clip
@@ -149,10 +145,11 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         self.tick = None
         self.id = uuid.uuid4().hex
         self.vad = webrtcvad.Vad()
-        self.vad.set_mode(2)  # Level of sensitivity
+          # Level of sensitivity
         self.processor = None
         self.path = None
         self.rate = None #default to None
+        self.silence = 20 #default of 20 frames (400ms)
         conns[self.id] = self
     def open(self, path):
         info("client connected")
@@ -164,7 +161,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         if type(message) == str:
             if self.vad.is_speech(message, self.rate):
                 debug ("SPEECH from {}".format(self.id))
-                self.tick = SILENCE
+                self.tick = self.silence
                 self.frame_buffer.append(message, self.id)
             else:
                 debug("Silence from {} TICK: {}".format(self.id, self.tick))
@@ -178,8 +175,14 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             m_type, m_options = cgi.parse_header(data['content-type'])
             self.rate= int(m_options['rate'])
             region = data.get('aws_region', 'us-east-1')
-            self.processor = LexProcessor(self.path, self.rate, region, data['aws_key'], data['aws_secret']).process
-            self.frame_buffer = BufferedPipe(MAX_LENGTH // MS_PER_FRAME, self.processor)
+            clip_min = int(data.get('clip_min', 200))
+            clip_max = int(data.get('clip_max', 10000))
+            silence_time = int(data.get('silence_time', 400))
+            sensitivity = int(data.get('sensitivity', 2))
+            self.vad.set_mode(sensitivity)
+            self.silence = silence_time // MS_PER_FRAME
+            self.processor = LexProcessor(self.path, self.rate, clip_min, region, data['aws_key'], data['aws_secret']).process
+            self.frame_buffer = BufferedPipe(clip_max // MS_PER_FRAME, self.processor)
             self.write_message('ok')
     def on_close(self):
         # Remove the connection from the list of connections
