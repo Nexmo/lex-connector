@@ -2,6 +2,21 @@
 
 You can use the Lex Connector to connect a Nexmo voice call to a Lex bot and then have an audio conversation with the bot.
 
+## Amazon Lex
+In order to get started, you will need to have a [AWS account](http://aws.amazon.com), as well as a bot on [Amazon Lex](https://aws.amazon.com/lex/).
+After your bot is configured, you will need to obtain your AWS key and secret.
+
+To find your Access Key and Secret Access Key:
+
+- Log in to your [AWS Management Console](http://aws.amazon.com).
+- Click on your user name at the top right of the page.
+- Click on the Security Credentials link from the drop-down menu.
+- Find the Access Credentials section, and copy the latest Access Key ID.
+- Click on the Show link in the same row, and copy the Secret Access Key.
+
+You will also need your bot name, which can be found in the Settings -> General on your Amazon Lex bot page, as well as the Alias of the bot, which is located in Settings -> Alias.
+
+## About The Lex Connector
 Lex Connector makes use of the [WebSockets feature](https://docs.nexmo.com/voice/voice-api/websockets) of Nexmo's Voice API. When a call is established, the API makes a websocket connection to Lex Connector and streams the audio to and from the call in real time.
 
 Lex Connector then takes care of capturing chunks of speach using Voice Activity Detection to then post to the Lex Endpoint. When Lex returns audio, Lex Connector streams that back over the websocket to the call.
@@ -48,7 +63,6 @@ Within the headers section of the endpoint you must supply the `aws_key` and `aw
 
 The `eventUrl` is where Nexmo will send events regarding the connection to the Lex Connector so that your application can be aware of the start and end of a session. Currently we do not share any data or events on the requests to and from Lex: the events sent are simply the start and end of the call.
 
-
 ## Running LexConnector
 
 You want to run your own instance of LexConnector? There should be no need to run your own server normally, as we host a public version on `lex-us-east-1.nexmo.com`. If you *do* want to run your own instance, you'll need an up-to-date version of Python 2. Install dependencies with:
@@ -59,6 +73,7 @@ pip install --upgrade -r requirements.txt
 
 Copy the `lexmo.conf.template` file to `lexmo.conf` and modify it with the hostname and port you wish to use to host the service. The port is internal to you - LexConnector assumes the service can be accessed via the default port (80/443) on the hostname you provide, with something like NGinx proxying to the port you've provided. LexConnector is a WebSocket based service, so make sure your proxy is configured to handle WebSocket connections! If you don't wish to run a proxy in front of LexConnector, just set the port to 80.
 
+## Running the example
 Run the server like this:
 
 ```bash
