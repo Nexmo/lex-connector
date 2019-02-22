@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import, print_function
 import wave
 import datetime
-from __future__ import absolute_import, print_function
-
 import argparse
 import ConfigParser as configparser
 from ConfigParser import SafeConfigParser as ConfigParser
