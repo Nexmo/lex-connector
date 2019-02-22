@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import wave
+import datetime
 from __future__ import absolute_import, print_function
 
 import argparse
@@ -28,10 +30,10 @@ import json
 from base64 import b64decode
 from requests.packages.urllib3.exceptions import InsecurePlatformWarning
 from requests.packages.urllib3.exceptions import SNIMissingWarning
+from dotenv import load_dotenv
+load_dotenv()
 
 # Only used for record function
-import datetime
-import wave
 
 logging.captureWarnings(True)
 requests.packages.urllib3.disable_warnings(InsecurePlatformWarning)
@@ -43,9 +45,8 @@ MS_PER_FRAME = 20  # Duration of a frame in ms
 # Global variables
 conns = {}
 
-DEFAULT_CONFIG = """
-[lexmo]
-"""
+HOSTNAME = os.getenv("HOSTNAME")
+PORT = os.getenv("PORT")
 
 
 class BufferedPipe(object):
@@ -211,20 +212,6 @@ class PingHandler(tornado.web.RequestHandler):
         self.finish()
 
 
-class Config(object):
-    def __init__(self, specified_config_path):
-        config = configparser.ConfigParser()
-        config.readfp(io.BytesIO(DEFAULT_CONFIG))
-        config.read("./lexmo.conf")
-        # Validate config:
-        try:
-            self.host = os.getenv('HOSTNAME') or config.get("lexmo", "host")
-            self.port = os.getenv('PORT') or config.getint("lexmo", "port")
-        except configparser.Error as e:
-            print("Configuration Error:", e, file=sys.stderr)
-            sys.exit(1)
-
-
 def main(argv=sys.argv[1:]):
     try:
         ap = argparse.ArgumentParser()
@@ -235,14 +222,13 @@ def main(argv=sys.argv[1:]):
             level=logging.INFO if args.verbose < 1 else logging.DEBUG,
             format="%(levelname)7s %(message)s",
         )
-        config = Config(args.config)
         application = tornado.web.Application([
             url(r"/ping", PingHandler),
             url(r"/(.*)", WSHandler),
         ])
         http_server = tornado.httpserver.HTTPServer(application)
-        http_server.listen(config.port)
-        info("Running on port %s", config.port)
+        http_server.listen(PORT)
+        info("Running on port %s", PORT)
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
         pass  # Suppress the stack-trace on quit
