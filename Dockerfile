@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM python:2.7.15
 WORKDIR /usr/src/lex-connector
 COPY . .
 RUN pip install --upgrade -r requirements.txt
