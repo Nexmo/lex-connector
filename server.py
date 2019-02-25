@@ -216,7 +216,6 @@ def main(argv=sys.argv[1:]):
     try:
         ap = argparse.ArgumentParser()
         ap.add_argument("-v", "--verbose", action="count")
-        ap.add_argument("-c", "--config", default=None)
         args = ap.parse_args(argv)
         logging.basicConfig(
             level=logging.INFO if args.verbose < 1 else logging.DEBUG,
