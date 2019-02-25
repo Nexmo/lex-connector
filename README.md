@@ -69,7 +69,7 @@ The `eventUrl` is where Nexmo will send events regarding the connection to the L
 
 ## Hosted LexConnector
 
-We host a public version of the LexConnector on `lex-us-east-1.nexmo.com`, however this is currently unmaintained and unsupported.
+We host a public version of the LexConnector on `lex-us-east-1.nexmo.com`, however this is currently unmaintained and unsupported. Where possible you should deploy your own version.
 
 ## Running LexConnector
 
