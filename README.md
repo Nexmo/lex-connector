@@ -67,6 +67,7 @@ Within the headers section of the endpoint you must supply your `aws_key` and `a
 
 The `eventUrl` is where Nexmo will send events regarding the connection to the Lex Connector so that your application can be aware of the start and end of a session. Currently we do not share any data or events on the requests to and from Lex. The only events sent to this URL are about the start and end of the call.
 
+
 ## Hosted LexConnector
 
 We host a public version of the LexConnector on `lex-us-east-1.nexmo.com`, however this is currently unmaintained and unsupported. Where possible you should deploy your own version.
@@ -106,6 +107,7 @@ git push heroku master
 Once the app is deployed, make a note of the URL as this is what you will need to change your websocket URI to in your NCCO in order to connect the call to the Lex Connector.
 
 ### Local Install
+
 
 To run your own instance locally you'll need an up-to-date version of Python 2. Install dependencies with:
 
