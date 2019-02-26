@@ -1,0 +1,9 @@
+version: '3.7'
+services:
+  lex:
+    container_name: nexmo-aws-lex-connector
+    restart: always
+    build: .
+    env_file: .env
+    ports:
+      - 5000:80

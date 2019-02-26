@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from __future__ import absolute_import, print_function
-
+import wave
+import datetime
 import argparse
 import ConfigParser as configparser
 from ConfigParser import SafeConfigParser as ConfigParser
@@ -28,10 +29,10 @@ import json
 from base64 import b64decode
 from requests.packages.urllib3.exceptions import InsecurePlatformWarning
 from requests.packages.urllib3.exceptions import SNIMissingWarning
+from dotenv import load_dotenv
+load_dotenv()
 
-#Only used for record function
-import datetime
-import wave
+# Only used for record function
 
 logging.captureWarnings(True)
 requests.packages.urllib3.disable_warnings(InsecurePlatformWarning)
@@ -43,11 +44,9 @@ MS_PER_FRAME = 20  # Duration of a frame in ms
 # Global variables
 conns = {}
 
-DEFAULT_CONFIG = """
-[lexmo]
-"""
-
-
+# Environment Variables, these are set in .env locally
+HOSTNAME = os.getenv("HOSTNAME")
+PORT = os.getenv("PORT")
 
 
 class BufferedPipe(object):
@@ -89,26 +88,34 @@ class LexProcessor(object):
         self.bytes_per_frame = rate/25
         self._path = path
         self.clip_min_frames = clip_min // MS_PER_FRAME
+
     def process(self, count, payload, id):
         if count > self.clip_min_frames:  # If the buffer is less than CLIP_MIN_MS, ignore it
-            if logging.getLogger().level == 10: #if we're in Debug then save the audio clip
-                fn = "{}rec-{}-{}.wav".format('./recordings/', id, datetime.datetime.now().strftime("%Y%m%dT%H%M%S"))
+            if logging.getLogger().level == 10:  # if we're in Debug then save the audio clip
+                fn = "{}rec-{}-{}.wav".format('./recordings/', id,
+                                              datetime.datetime.now().strftime("%Y%m%dT%H%M%S"))
                 output = wave.open(fn, 'wb')
-                output.setparams((1, 2, self.rate, 0, 'NONE', 'not compressed'))
+                output.setparams(
+                    (1, 2, self.rate, 0, 'NONE', 'not compressed'))
                 output.writeframes(payload)
                 output.close()
                 debug('File written {}'.format(fn))
-            auth = AWS4Auth(self._aws_id, self._aws_secret, self._aws_region, 'lex', unsign_payload=True)
+            auth = AWS4Auth(self._aws_id, self._aws_secret,
+                            self._aws_region, 'lex', unsign_payload=True)
             info('Processing {} frames for {}'.format(str(count), id))
-            endpoint = 'https://runtime.lex.{}.amazonaws.com{}'.format(self._aws_region, self._path)
+            endpoint = 'https://runtime.lex.{}.amazonaws.com{}'.format(
+                self._aws_region, self._path)
             info(endpoint)
             if self.rate == 16000:
-                headers = {'Content-Type': 'audio/l16; channels=1; rate=16000', 'Accept': 'audio/pcm'}
+                headers = {
+                    'Content-Type': 'audio/l16; channels=1; rate=16000', 'Accept': 'audio/pcm'}
             elif self.rate == 8000:
-                headers = {'Content-Type': 'audio/lpcm; sample-rate=8000; sample-size-bits=16; channel-count=1; is-big-endian=false', 'Accept': 'audio/pcm'}
+                headers = {
+                    'Content-Type': 'audio/lpcm; sample-rate=8000; sample-size-bits=16; channel-count=1; is-big-endian=false', 'Accept': 'audio/pcm'}
             else:
                 info("Unsupported Sample Rate: % ".format(self.rate))
-            req = requests.Request('POST', endpoint, auth=auth, headers=headers)
+            req = requests.Request(
+                'POST', endpoint, auth=auth, headers=headers)
             prepped = req.prepare()
             info(prepped.headers)
             r = requests.post(endpoint, data=payload, headers=prepped.headers)
@@ -119,9 +126,11 @@ class LexProcessor(object):
                     conns[id].close()
         else:
             info('Discarding {} frames'.format(str(count)))
+
     def playback(self, response, id):
         if self.rate == 8000:
-            content, _ignore = audioop.ratecv(response, 2, 1, 16000, 8000, None) # Downsample 16Khz to 8Khz
+            content, _ignore = audioop.ratecv(
+                response, 2, 1, 16000, 8000, None)  # Downsample 16Khz to 8Khz
         else:
             content = response
         frames = len(content) // self.bytes_per_frame
@@ -136,7 +145,6 @@ class LexProcessor(object):
             pos = newpos
 
 
-
 class WSHandler(tornado.websocket.WebSocketHandler):
     def initialize(self):
         # Create a buffer which will call `process` when it is full:
@@ -145,35 +153,38 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         self.tick = None
         self.id = uuid.uuid4().hex
         self.vad = webrtcvad.Vad()
-          # Level of sensitivity
+        # Level of sensitivity
         self.processor = None
         self.path = None
-        self.rate = None #default to None
-        self.silence = 20 #default of 20 frames (400ms)
+        self.rate = None  # default to None
+        self.silence = 20  # default of 20 frames (400ms)
         conns[self.id] = self
+
     def open(self, path):
         info("client connected")
         debug(self.request.uri)
         self.path = self.request.uri
         self.tick = 0
+
     def on_message(self, message):
         # Check if message is Binary or Text
         if type(message) == str:
             if self.vad.is_speech(message, self.rate):
-                debug ("SPEECH from {}".format(self.id))
+                debug("SPEECH from {}".format(self.id))
                 self.tick = self.silence
                 self.frame_buffer.append(message, self.id)
             else:
                 debug("Silence from {} TICK: {}".format(self.id, self.tick))
                 self.tick -= 1
                 if self.tick == 0:
-                    self.frame_buffer.process(self.id)  # Force processing and clearing of the buffer
+                    # Force processing and clearing of the buffer
+                    self.frame_buffer.process(self.id)
         else:
             info(message)
             # Here we should be extracting the meta data that was sent and attaching it to the connection object
             data = json.loads(message)
             m_type, m_options = cgi.parse_header(data['content-type'])
-            self.rate= int(m_options['rate'])
+            self.rate = int(m_options['rate'])
             region = data.get('aws_region', 'us-east-1')
             clip_min = int(data.get('clip_min', 200))
             clip_max = int(data.get('clip_max', 10000))
@@ -181,9 +192,12 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             sensitivity = int(data.get('sensitivity', 2))
             self.vad.set_mode(sensitivity)
             self.silence = silence_time // MS_PER_FRAME
-            self.processor = LexProcessor(self.path, self.rate, clip_min, region, data['aws_key'], data['aws_secret']).process
-            self.frame_buffer = BufferedPipe(clip_max // MS_PER_FRAME, self.processor)
+            self.processor = LexProcessor(
+                self.path, self.rate, clip_min, region, data['aws_key'], data['aws_secret']).process
+            self.frame_buffer = BufferedPipe(
+                clip_max // MS_PER_FRAME, self.processor)
             self.write_message('ok')
+
     def on_close(self):
         # Remove the connection from the list of connections
         del conns[self.id]
@@ -198,38 +212,22 @@ class PingHandler(tornado.web.RequestHandler):
         self.finish()
 
 
-class Config(object):
-    def __init__(self, specified_config_path):
-        config = configparser.ConfigParser()
-        config.readfp(io.BytesIO(DEFAULT_CONFIG))
-        config.read("./lexmo.conf")
-        # Validate config:
-        try:
-            self.host = os.getenv('HOST') or config.get("lexmo", "host")
-            self.port = os.getenv('PORT') or config.getint("lexmo", "port")
-        except configparser.Error as e:
-            print("Configuration Error:", e, file=sys.stderr)
-            sys.exit(1)
-
-
 def main(argv=sys.argv[1:]):
     try:
         ap = argparse.ArgumentParser()
         ap.add_argument("-v", "--verbose", action="count")
-        ap.add_argument("-c", "--config", default=None)
         args = ap.parse_args(argv)
         logging.basicConfig(
             level=logging.INFO if args.verbose < 1 else logging.DEBUG,
             format="%(levelname)7s %(message)s",
         )
-        config = Config(args.config)
         application = tornado.web.Application([
-			url(r"/ping", PingHandler),
+            url(r"/ping", PingHandler),
             url(r"/(.*)", WSHandler),
         ])
         http_server = tornado.httpserver.HTTPServer(application)
-        http_server.listen(config.port)
-        info("Running on port %s", config.port)
+        http_server.listen(PORT)
+        info("Running on port %s", PORT)
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
         pass  # Suppress the stack-trace on quit

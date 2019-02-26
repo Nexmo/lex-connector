@@ -1,0 +1,7 @@
+{
+  "name": "Lex Connector - Connect Nexmo Calls to AWS Lex bots",
+  "description": "The Lex Connector allows a Nexmo call to be connected to any AWS Lex bot. This is the bridge between voice and the bot functionality that allows users to 'talk' directly with a bot.",
+  "keywords": ["lex", "bot", "python", "amazon web services", "nexmo"],
+  "website": "https://developer.nexmo.com/extend/amazon-lex-connector",
+  "repository": "https://github.com/Nexmo/lex-connector"
+}
