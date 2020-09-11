@@ -68,10 +68,6 @@ Within the headers section of the endpoint you must supply your `aws_key` and `a
 The `eventUrl` is where Nexmo will send events regarding the connection to the Lex Connector so that your application can be aware of the start and end of a session. Currently we do not share any data or events on the requests to and from Lex. The only events sent to this URL are about the start and end of the call.
 
 
-## Hosted LexConnector
-
-We host a public version of the LexConnector on `lex-us-east-1.nexmo.com`, however this is currently unmaintained and unsupported. Where possible you should deploy your own version.
-
 ## Running LexConnector
 
 If you wish to deploy your own version of the Lex Connector you can do so in the following ways.
