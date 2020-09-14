@@ -4,8 +4,6 @@ from __future__ import absolute_import, print_function
 import wave
 import datetime
 import argparse
-import ConfigParser as configparser
-from ConfigParser import SafeConfigParser as ConfigParser
 import io
 import logging
 import os
@@ -211,18 +209,27 @@ class PingHandler(tornado.web.RequestHandler):
         self.set_header("Content-Type", 'text/plain')
         self.finish()
 
+class AnswerHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    def get(self):
+        f = open("example_ncco.json", "r")
+        self.write(f.read())
+        self.set_header("Content-Type", 'application/json')
+        self.finish()
 
 def main(argv=sys.argv[1:]):
     try:
         ap = argparse.ArgumentParser()
         ap.add_argument("-v", "--verbose", action="count")
         args = ap.parse_args(argv)
+        print(args.verbose)
         logging.basicConfig(
-            level=logging.INFO if args.verbose < 1 else logging.DEBUG,
+            level=logging.INFO if args.verbose != None else logging.DEBUG,
             format="%(levelname)7s %(message)s",
         )
         application = tornado.web.Application([
             url(r"/ping", PingHandler),
+            url(r"/answer", AnswerHandler),
             url(r"/(.*)", WSHandler),
         ])
         http_server = tornado.httpserver.HTTPServer(application)
