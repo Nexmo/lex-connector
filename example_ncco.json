@@ -8,7 +8,7 @@
         "eventUrl": ["http://example.ngrok.io/event"],
         "endpoint": [{
             "type": "websocket",
-            "uri": "ws://lex.nexmo.com/bot/BOTNAME/alias/ALAIS/user/USER/content",
+            "uri": "ws://example.ngrok.io/bot/BOTNAME/alias/ALAIS/user/USER/content",
             "content-type": "audio/l16;rate=8000",
             "headers": {
                 "aws_region": "us-east-1",
