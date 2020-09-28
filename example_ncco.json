@@ -1,24 +1,24 @@
 [
-{
-	"action": "talk",
-	"text": "Hello, I am Lex, how can I help you"
-}, 
-{
-	"action": "connect",
-	"eventUrl": ["http://example.ngrok.io/event"],
-	"endpoint": [{
-		"type": "websocket",
-		"uri": "ws://lex.nexmo.com/bot/BOTNAME/alias/ALAIS/user/USER/content",
-		"content-type": "audio/l16;rate=8000",
-		"headers": {
-            "aws_region": "us-east-1",
-			"aws_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAA",
-			"aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0",
-            "silence_time": 400,
-            "clip_min": 200,
-            "clip_max": 10000,
-            "sensitivity": 2
-		}
-	}]
-}
-]
+    {
+        "action": "talk",
+        "text": "Hello, I am Lex, how can I help you"
+    }, 
+    {
+        "action": "connect",
+        "eventUrl": ["http://example.ngrok.io/event"],
+        "endpoint": [{
+            "type": "websocket",
+            "uri": "ws://example.ngrok.io/bot/BOTNAME/alias/ALAIS/user/USER/content",
+            "content-type": "audio/l16;rate=8000",
+            "headers": {
+                "aws_region": "us-east-1",
+                "aws_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0",
+                "silence_time": 400,
+                "clip_min": 200,
+                "clip_max": 10000,
+                "sensitivity": 2
+            }
+        }]
+    }
+    ]
