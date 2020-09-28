@@ -1,9 +1,6 @@
 # Lex Connector
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/tchan408/lex-connector/edit/patch-2/heroku)
-
-
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=${{env.GITHUB_REPOSITORY}}/heroku)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/Nexmo/lex-connector/heroku)
 
 You can use the Lex Connector to connect a Vonage Voice API call to a Lex bot and then have an audio conversation with the bot.
 
