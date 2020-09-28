@@ -4,8 +4,6 @@ from __future__ import absolute_import, print_function
 import wave
 import datetime
 import argparse
-import ConfigParser as configparser
-from ConfigParser import SafeConfigParser as ConfigParser
 import io
 import logging
 import os
@@ -133,12 +131,13 @@ class LexProcessor(object):
                 response, 2, 1, 16000, 8000, None)  # Downsample 16Khz to 8Khz
         else:
             content = response
-        frames = len(content) // self.bytes_per_frame
+        frames = int(len(content) // self.bytes_per_frame)
+        print(frames)
         info("Playing {} frames to {}".format(frames, id))
         conn = conns[id]
-        pos = 0
+        pos = int(0)
         for x in range(0, frames + 1):
-            newpos = pos + self.bytes_per_frame
+            newpos = int(pos + self.bytes_per_frame)
             #debug("writing bytes {} to {} to socket for {}".format(pos, newpos, id))
             data = content[pos:newpos]
             conn.write_message(data, binary=True)
@@ -168,7 +167,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         # Check if message is Binary or Text
-        if type(message) == str:
+        if type(message) != str:
             if self.vad.is_speech(message, self.rate):
                 debug("SPEECH from {}".format(self.id))
                 self.tick = self.silence
@@ -211,6 +210,13 @@ class PingHandler(tornado.web.RequestHandler):
         self.set_header("Content-Type", 'text/plain')
         self.finish()
 
+class AnswerHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    def get(self):
+        f = open("ncco.json", "r")
+        self.write(f.read())
+        self.set_header("Content-Type", 'application/json')
+        self.finish()
 
 def main(argv=sys.argv[1:]):
     try:
@@ -218,11 +224,13 @@ def main(argv=sys.argv[1:]):
         ap.add_argument("-v", "--verbose", action="count")
         args = ap.parse_args(argv)
         logging.basicConfig(
-            level=logging.INFO if args.verbose < 1 else logging.DEBUG,
+            level=logging.DEBUG if args.verbose != None else logging.INFO,
             format="%(levelname)7s %(message)s",
         )
+        print("Logging level is {}".format(logging.getLevelName(logging.getLogger().level)))
         application = tornado.web.Application([
             url(r"/ping", PingHandler),
+            url(r"/answer", AnswerHandler),
             url(r"/(.*)", WSHandler),
         ])
         http_server = tornado.httpserver.HTTPServer(application)

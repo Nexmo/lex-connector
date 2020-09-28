@@ -13,4 +13,4 @@ singledispatch==3.4.0.3
 six==1.10.0
 tornado==4.4.2
 webrtcvad==2.0.10
-python-dotenv==0.10.1
+python-dotenv==0.14.0

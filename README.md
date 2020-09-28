@@ -2,7 +2,7 @@
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](http://nexmo.dev/lex-connector-heroku)
 
-You can use the Lex Connector to connect a Nexmo voice call to a Lex bot and then have an audio conversation with the bot.
+You can use the Lex Connector to connect a Vonage Voice API call to a Lex bot and then have an audio conversation with the bot.
 
 ## Amazon Lex
 
@@ -42,10 +42,11 @@ Here is an example of the NCCO you should return to handle incoming calls:
                 "content-type": "audio/l16;rate=8000",
                 "headers": {
                     "aws_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAA",
-                    "aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0"
+                    "aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0",
+                    "sensitivity": 3
                 },
                 "type": "websocket",
-                "uri": "wss://lex-us-east-1.nexmo.com/bot/BOTNAME/alias/ALIAS/user/USER/content"
+                "uri": "wss://xxxxx.ngrok.io/bot/BOTNAME/alias/ALIAS/user/USER/content"
             }
         ],
         "eventUrl": [
@@ -55,13 +56,17 @@ Here is an example of the NCCO you should return to handle incoming calls:
 ]
 ```
 
+The connector provides a handler on `/answer` which will serve the contents of `example_ncco.json` to faclitate testing.
+
 The first `talk` action is a simple way to start the call: Lex expects the user to speak first, so we need to start the conversation as one would in a phone call, with the answerer greeting the caller. You can customise this text to fit your use case.
 
 You should look at the [range of voices available on Nexmo](https://docs.nexmo.com/voice/voice-api/ncco-reference#talk) and on Lex to select the same voice, so that it feels natural for the caller. (There is some overlap in the choice of voices available from both Nexmo and Lex.)
 
 The next action is `connect`: this makes the call connect to the WebSocket endpoint, specifically the Lex Connector WebSocket.
 
-The path portion of the uri is the same as the path to the `PostContent` [endpoint within Lex](http://docs.aws.amazon.com/lex/latest/dg/API_PostContent.html) but with the `lex-us-east-1.nexmo.com` as host instead of AWS. Therefore you should set your BOTNAME, ALIAS and USER details as part of this URI. You can get these details from your AWS Console after you set up a new instance of Lex.
+The parameter `sensitivity` allows you to set the VAD (Voice Activity Detection) sensitivity from the most sensitive (value = 0) to the least sensitive (value = 3), this is an integer value.
+
+The path portion of the uri is the same as the path to the `PostContent` [endpoint within Lex](http://docs.aws.amazon.com/lex/latest/dg/API_PostContent.html) but with your server host address, e.g. `xxxxx.ngrok.io`. Therefore you should set your BOTNAME, ALIAS and USER details as part of this URI. You can get these details from your AWS Console after you set up a new instance of Lex.
 
 Within the headers section of the endpoint you must supply your `aws_key` and `aws_secret` that will be used to connect to Lex.
 
@@ -105,7 +110,7 @@ Once the app is deployed, make a note of the URL as this is what you will need t
 ### Local Install
 
 
-To run your own instance locally you'll need an up-to-date version of Python 2. Install dependencies with:
+To run your own instance locally you'll need an up-to-date version of Python 3. Install dependencies with:
 
 ```bash
 pip install --upgrade -r requirements.txt
@@ -131,4 +136,4 @@ Run the server like this:
 python server.py
 ```
 
-The WebSocket URL you use in your NCCO should use the hostname of your service wherever it is running, instead of `lex-us-east-1.nexmo.com`, and if you don't have SSL set up, you'll need to change the `wss` prefix to `ws`.
+The WebSocket URL you use in your NCCO should use the hostname of your service wherever it is running, and if you don't have SSL set up, you'll need to change the `wss` prefix to `ws`.

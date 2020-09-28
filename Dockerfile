@@ -1,4 +1,4 @@
-FROM python:2.7.15
+FROM python:3.8.3
 WORKDIR /usr/src/lex-connector
 COPY .env.example .env
 COPY . .
