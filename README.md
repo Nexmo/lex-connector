@@ -138,3 +138,7 @@ python server.py
 ```
 
 The WebSocket URL you use in your NCCO should use the hostname of your service wherever it is running, and if you don't have SSL set up, you'll need to change the `wss` prefix to `ws`.
+
+### Interacting with Lex
+
+Call the phone number linked to your VAPI (Voice API application). What you say at the beginning depends on how the Lex bot has been set up, i.e. the Welcome intent has a few programmed utterances, you would say one of those utterances.
