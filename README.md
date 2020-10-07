@@ -141,4 +141,4 @@ The WebSocket URL you use in your NCCO should use the hostname of your service w
 
 ### Interacting with Lex
 
-Call the phone number linked to your VAPI (Voice API application). What you say at the beginning depends on how the Lex bot has been set up, i.e. the Welcome intent has a few programmed utterances, you would say one of those utterances.
+Call the phone number linked to your VAPI (Voice API application). What you say at the beginning depends on how the Lex bot has been set up, i.e. the Welcome intent has a few programmed utterances, you would say one of those utterances. 
