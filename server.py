@@ -42,8 +42,7 @@ MS_PER_FRAME = 20  # Duration of a frame in ms
 # Global variables
 conns = {}
 
-# Environment Variables, these are set in .env locally
-HOSTNAME = os.getenv("HOSTNAME")
+# Environment variables, these are set in .env locally
 PORT = os.getenv("PORT")
 
 

@@ -1,6 +1,6 @@
 # Lex Connector
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](http://nexmo.dev/lex-connector-heroku)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/Nexmo/lex-connector/heroku)
 
 You can use the Lex Connector to connect a Vonage Voice API call to a Lex bot and then have an audio conversation with the bot.
 
@@ -85,7 +85,7 @@ Start by copying the `.env.example` file over to a new file called `.env`:
 cp .env.example > .env
 ```
 
-Modify the contents of the file to include your own `HOSTNAME` and `PORT`. You can then launch the Lex Connector as a Docker instance by running:
+Edit `.env` file, set the `PORT` value where websockets connections will be established. You can then launch the Lex Connector as a Docker instance by running:
 
 ```bash
 docker-compose up
@@ -116,11 +116,12 @@ To run your own instance locally you'll need an up-to-date version of Python 3. 
 pip install --upgrade -r requirements.txt
 ```
 
-Copy the `.env` example over to a new file and replace the contents with your own `HOSTNAME` and `PORT`
+Copy the `.env.example` file over to a new file called `.env`.
 
 ```bash
 cp .env.example > .env
 ```
+Edit `.env` file, set the `PORT` value where websockets connections will be established.
 
 The port is internal to you - LexConnector assumes the service can be accessed via the default port (80/443) on the hostname you provide, with something like NGinx proxying to the port you've provided.
 
@@ -137,3 +138,7 @@ python server.py
 ```
 
 The WebSocket URL you use in your NCCO should use the hostname of your service wherever it is running, and if you don't have SSL set up, you'll need to change the `wss` prefix to `ws`.
+
+### Interacting with Lex
+
+Call the phone number linked to your VAPI (Voice API application). What you say at the beginning depends on how the Lex bot has been set up, i.e. the Welcome intent has a few programmed utterances, you would say one of those utterances. 
