@@ -77,7 +77,7 @@ class BufferedPipe(object):
 
 
 class LexProcessor(object):
-    def __init__(self, path, rate, clip_min, aws_region, aws_id, aws_secret):
+    def __init__(self, path, rate, clip_min, aws_region, aws_id, aws_secret, requestor_id, analytics_url):
         self._aws_region = aws_region
         self._aws_id = aws_id
         self._aws_secret = aws_secret
@@ -85,9 +85,12 @@ class LexProcessor(object):
         self.bytes_per_frame = rate/25
         self._path = path
         self.clip_min_frames = clip_min // MS_PER_FRAME
+        self.client_id = requestor_id
+        self.webhook_url = analytics_url
 
     def process(self, count, payload, id):
         if count > self.clip_min_frames:  # If the buffer is less than CLIP_MIN_MS, ignore it
+            # if 1: (to create recordings, foder ./recordings must exist)
             if logging.getLogger().level == 10:  # if we're in Debug then save the audio clip
                 fn = "{}rec-{}-{}.wav".format('./recordings/', id,
                                               datetime.datetime.now().strftime("%Y%m%dT%H%M%S"))
@@ -99,6 +102,11 @@ class LexProcessor(object):
                 debug('File written {}'.format(fn))
             auth = AWS4Auth(self._aws_id, self._aws_secret,
                             self._aws_region, 'lex', unsign_payload=True)
+
+            info(">>> auth:")
+            info(auth)
+
+
             info('Processing {} frames for {}'.format(str(count), id))
             endpoint = 'https://runtime.lex.{}.amazonaws.com{}'.format(
                 self._aws_region, self._path)
@@ -114,9 +122,44 @@ class LexProcessor(object):
             req = requests.Request(
                 'POST', endpoint, auth=auth, headers=headers)
             prepped = req.prepare()
+            info('Here 01')
             info(prepped.headers)
             r = requests.post(endpoint, data=payload, headers=prepped.headers)
+            info('Here 02')
             info(r.headers)
+            
+            if (r.headers.get('x-amz-lex-sentiment')):
+                self.customer_sentiment = b64decode(r.headers['x-amz-lex-sentiment']).decode('ascii')
+            else:    
+                self.customer_sentiment = "Sentiment analysis is not enabled on this Lex bot or customer_transcript is empty"
+
+            self.customer_transcript = r.headers.get('x-amz-lex-input-transcript')
+            self.bot_transcript = r.headers.get('x-amz-lex-message')
+            self.session_id = r.headers.get('x-amz-lex-session-id')
+            # info ("customer_sentiment")
+            # info (self.customer_sentiment)
+            # info ("customer_transcript")
+            # info (self.customer_transcript)
+            # info ("bot_transcript")
+            # info (self.bot_transcript)
+            # info ("session_id")
+            # info (self.session_id)
+            self.analytics_raw = {
+                "customer_transcript": str(self.customer_transcript),
+                "bot_transcript": str(self.bot_transcript),
+                "customer_sentiment": str(self.customer_sentiment),
+                "session_id": str(self.session_id),
+                "client_id": self.client_id,
+                "service": "Lex"
+            }
+            self.analytics = json.dumps(self.analytics_raw)
+            info('analytics')
+            info(self.analytics)
+
+            # Posting to analytics server
+            if (self.webhook_url):
+            	a = requests.post(self.webhook_url, data=self.analytics, headers={'Content-Type': 'application/json'})
+
             self.playback(r.content, id)
             if r.headers.get('x-amz-lex-session-attributes'):
                 if json.loads(b64decode(r.headers['x-amz-lex-session-attributes'])).get('nexmo-close'):
@@ -182,16 +225,33 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             # Here we should be extracting the meta data that was sent and attaching it to the connection object
             data = json.loads(message)
             m_type, m_options = cgi.parse_header(data['content-type'])
+            
             self.rate = int(m_options['rate'])
+            # info(">>> rate")
+            # info(self.rate)            
+
             region = data.get('aws_region', 'us-east-1')
             clip_min = int(data.get('clip_min', 200))
             clip_max = int(data.get('clip_max', 10000))
             silence_time = int(data.get('silence_time', 400))
-            sensitivity = int(data.get('sensitivity', 2))
+            
+            sensitivity = int(data.get('sensitivity', 3))
+            # info(">>> sensitivity")
+            # info(sensitivity)
+            
+            self.client_id = data.get('client_id', "")
+            # info(">>> client_id")
+            # info(self.client_id) 
+
+            # Webhook URL for analytics (optional for client app)
+            self.webhook_url = data.get('webhook_url', "")
+            # info(">>> webhook_url")
+            # info(self.webhook_url)
+    
             self.vad.set_mode(sensitivity)
             self.silence = silence_time // MS_PER_FRAME
             self.processor = LexProcessor(
-                self.path, self.rate, clip_min, region, data['aws_key'], data['aws_secret']).process
+                self.path, self.rate, clip_min, region, data['aws_key'], data['aws_secret'], self.client_id, self.webhook_url).process
             self.frame_buffer = BufferedPipe(
                 clip_max // MS_PER_FRAME, self.processor)
             self.write_message('ok')
@@ -209,14 +269,6 @@ class PingHandler(tornado.web.RequestHandler):
         self.set_header("Content-Type", 'text/plain')
         self.finish()
 
-class AnswerHandler(tornado.web.RequestHandler):
-    @tornado.web.asynchronous
-    def get(self):
-        f = open("ncco.json", "r")
-        self.write(f.read())
-        self.set_header("Content-Type", 'application/json')
-        self.finish()
-
 def main(argv=sys.argv[1:]):
     try:
         ap = argparse.ArgumentParser()
@@ -229,7 +281,6 @@ def main(argv=sys.argv[1:]):
         print("Logging level is {}".format(logging.getLevelName(logging.getLogger().level)))
         application = tornado.web.Application([
             url(r"/ping", PingHandler),
-            url(r"/answer", AnswerHandler),
             url(r"/(.*)", WSHandler),
         ])
         http_server = tornado.httpserver.HTTPServer(application)

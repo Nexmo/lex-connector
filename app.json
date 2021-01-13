@@ -6,7 +6,7 @@
   "repository": "https://github.com/Nexmo/lex-connector",	
   "env":{
     "NAME": {
-      "description": "The Heroku app name"
+      "description": "The Heroku app name, enter it exactly the same as you have above"
     }
   },
   "buildpacks": [

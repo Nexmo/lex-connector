@@ -2,7 +2,7 @@
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/Nexmo/lex-connector/heroku)
 
-You can use the Lex Connector to connect a Vonage Voice API call to a Lex bot and then have an audio conversation with the bot.
+You can use the Lex Connector to connect a Vonage Voice API call to a Lex bot and then have an audio conversation with the bot. Voice transcripts and sentiment analysis are posted back to the Vonage Voice API application.
 
 ## Amazon Lex
 
@@ -25,55 +25,21 @@ Lex Connector makes use of the [WebSockets feature](https://docs.nexmo.com/voice
 
 Lex Connector then takes care of capturing chunks of speech using Voice Activity Detection to then post to the Lex Endpoint. When Lex returns audio, Lex Connector streams that back over the websocket to the call.
 
-Lex Connector does not store any Lex-specific configuration or credentials: these are supplied in the NCCO, telling the Voice API to connect the call to the Connector. This is a standard `connect` function used to connect calls to WebSockets, with a few specific parameters to connect to Lex.
+Lex Connector does not store any Lex-specific configuration or credentials: these are supplied in the NCCO from the Voice API application, telling the Voice API to connect the call to this Lex Connector. This is a standard `connect` function used to connect calls to WebSockets, with a few specific parameters to connect to Lex.
 
-Here is an example of the NCCO you should return to handle incoming calls:
+See https://github.com/nexmo-community/lex-client for a sample Voice API application using this connector to connect voice calls to an Amazon Lex Bot.
 
-```
-[
-    {
-        "action": "talk",
-        "text": "Hello, I am Lex, how can I help you?"
-    },
-    {
-        "action": "connect",
-        "endpoint": [
-            {
-                "content-type": "audio/l16;rate=8000",
-                "headers": {
-                    "aws_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAA",
-                    "aws_secret": "eescOz9xisx+gx-PFU3G4AJg4NE4UExnHYaijI+o6xgNT0",
-                    "sensitivity": 3
-                },
-                "type": "websocket",
-                "uri": "wss://xxxxx.ngrok.io/bot/BOTNAME/alias/ALIAS/user/USER/content"
-            }
-        ],
-        "eventUrl": [
-            "http://example.com/event"
-        ]
-    }
-]
-```
+## Transcripts
 
-The connector provides a handler on `/answer` which will serve the contents of `example_ncco.json` to faclitate testing.
+This connector will send caller's transcript (labeled as customer) and Lex bot's transcript to the Voice API application via a webhook call.
 
-The first `talk` action is a simple way to start the call: Lex expects the user to speak first, so we need to start the conversation as one would in a phone call, with the answerer greeting the caller. You can customise this text to fit your use case.
+## Sentiment analysis
 
-You should look at the [range of voices available on Nexmo](https://docs.nexmo.com/voice/voice-api/ncco-reference#talk) and on Lex to select the same voice, so that it feels natural for the caller. (There is some overlap in the choice of voices available from both Nexmo and Lex.)
+You may enable sentiment analysis by going to AWS console, Amazon Lex, your Lex bot, then Settings/General.
 
-The next action is `connect`: this makes the call connect to the WebSocket endpoint, specifically the Lex Connector WebSocket.
+This connector will send caller's sentiment analysis to the Voice API application via the same webhook call as mentioned above.
 
-The parameter `sensitivity` allows you to set the VAD (Voice Activity Detection) sensitivity from the most sensitive (value = 0) to the least sensitive (value = 3), this is an integer value.
-
-The path portion of the uri is the same as the path to the `PostContent` [endpoint within Lex](http://docs.aws.amazon.com/lex/latest/dg/API_PostContent.html) but with your server host address, e.g. `xxxxx.ngrok.io`. Therefore you should set your BOTNAME, ALIAS and USER details as part of this URI. You can get these details from your AWS Console after you set up a new instance of Lex.
-
-Within the headers section of the endpoint you must supply your `aws_key` and `aws_secret` that will be used to connect to Lex.
-
-The `eventUrl` is where Nexmo will send events regarding the connection to the Lex Connector so that your application can be aware of the start and end of a session. Currently we do not share any data or events on the requests to and from Lex. The only events sent to this URL are about the start and end of the call.
-
-
-## Running LexConnector
+## Running Lex Connector
 
 If you wish to deploy your own version of the Lex Connector you can do so in the following ways.
 
@@ -138,7 +104,3 @@ python server.py
 ```
 
 The WebSocket URL you use in your NCCO should use the hostname of your service wherever it is running, and if you don't have SSL set up, you'll need to change the `wss` prefix to `ws`.
-
-### Interacting with Lex
-
-Call the phone number linked to your VAPI (Voice API application). What you say at the beginning depends on how the Lex bot has been set up, i.e. the Welcome intent has a few programmed utterances, you would say one of those utterances. 
