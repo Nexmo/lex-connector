@@ -1,5 +1,5 @@
 backports-abc==0.5
-certifi==2018.11.29
+certifi==2022.12.7
 packaging==16.8
 pyparsing==2.1.10
 requests==2.21.0
