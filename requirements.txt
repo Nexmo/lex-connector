@@ -11,6 +11,6 @@ git+git://github.com/tbass134/requests-aws4auth.git@7f0a747c52b6913dcce71f82c8d8
 
 singledispatch==3.4.0.3
 six==1.10.0
-tornado==4.4.2
+tornado==6.3.3
 webrtcvad==2.0.10
 python-dotenv==0.14.0
